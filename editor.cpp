@@ -9,9 +9,6 @@
 
 Editor::Editor(std::filesystem::path const &filePath) : m_editPath(filePath) {
   // TODO: check for file existence and read if present
-  // TODO: only create file during write out if it isn't present
-  // NOTE: if the file doesn't exist, std::fstream::trunc is needed to actually
-  // create the file
   m_editFile.open(m_editPath,
                   std::fstream::in | std::fstream::out | std::fstream::trunc);
 }
@@ -62,7 +59,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: move, replace
+  // TODO: move, replace, add help text
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
