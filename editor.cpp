@@ -267,7 +267,9 @@ void Editor::find_string(CommandInfo const &cinfo) {
     return;
   }
 
-  std::string const term = cinfo.target.value();
+  // NOTE: should we allow for quoted search terms to enable whitespace
+  // matching?
+  std::string const term = trim(cinfo.target.value());
 
   while (searchIdx <= end) {
     if (m_lines[searchIdx].find(term) != std::string::npos) {
