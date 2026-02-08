@@ -178,30 +178,42 @@ void Editor::move_cursor(CommandInfo const &cinfo) {
 }
 
 void Editor::delete_lines(CommandInfo const &cinfo) {
-  std::ignore = cinfo;
-  fmt::print("< NOTICE: NOT YET IMPLMENTED. >\n");
-  return;
+  // std::ignore = cinfo;
+  // fmt::print("< NOTICE: NOT YET IMPLMENTED. >\n");
+  // return;
 
-  /*
-    if (!cinfo.startIdx.has_value()) {
-      // for delete we only remove current line on empty range input
-      m_lines.erase(m_lines.begin() + m_currIdx);
-      fmt::print("< Deleted 1 line, at position {}. >\n",
-                 to_user_index(m_currIdx));
-    } else {
-      auto [start, end] = get_inclusive_bounds(cinfo);
-      // erase method uses half-open interval so we adjust the end
-      end++;
-      m_lines.erase(m_lines.begin() + start, m_lines.begin() + end);
-      fmt::print("< Deleted {} lines, starting at line {}. >\n", end - start,
-                 to_user_index(start));
+  if (!cinfo.startIdx.has_value()) {
+    // for delete we only remove current line on empty range input
+    if (m_currIdx >= static_cast<int>(m_lines.size())) {
+      // do nothing if we're on a blank line
+      return;
+    }
+    m_lines.erase(m_lines.begin() + m_currIdx);
+    fmt::print("< Deleted 1 line, at position {}. >\n",
+               to_user_index(m_currIdx));
+  } else {
+    auto [start, end] = get_inclusive_bounds(cinfo);
 
-      // move to safe offset
-      m_currIdx = start;
+    if (start >= static_cast<int>(m_lines.size())) {
+      return;
     }
 
-    fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
-  */
+    if (start > end) {
+      fmt::print("< Invalid range. No lines deleted. >\n");
+      return;
+    }
+
+    // erase method uses half-open interval so we adjust the end
+    end++;
+    m_lines.erase(m_lines.begin() + start, m_lines.begin() + end);
+    fmt::print("< Deleted {} lines, starting at line {}. >\n", end - start,
+               to_user_index(start));
+
+    // move to safe offset
+    m_currIdx = start;
+  }
+
+  fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
 }
 
 int Editor::translate_anchors(std::string const &anchor) const {
