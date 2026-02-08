@@ -47,6 +47,8 @@ private:
   CommandInfo parse_command_info(std::string const &line);
   int inclusive_limit(int val) const;
   static std::string trim(std::string const &line);
+  static std::string trim_left(std::string const &line);
+  static std::string trim_right(std::string const &line);
   static bool has_escape_seq(std::string const &line);
   static std::pair<std::string, std::string>
   split_on_first(std::string const &line, std::string const &patt);

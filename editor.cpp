@@ -181,7 +181,6 @@ void Editor::move_cursor(CommandInfo const &cinfo) {
 }
 
 void Editor::copy_lines(CommandInfo const &cinfo) {
-
   auto [start, end] = get_inclusive_bounds(cinfo);
   // copy method uses exclusive logic
   end++;
@@ -205,8 +204,12 @@ void Editor::copy_lines(CommandInfo const &cinfo) {
     return;
   }
 
-  m_lines.insert(m_lines.begin() + dest, m_lines.begin() + start,
-                 m_lines.begin() + end);
+  // make a copy to avoid iterator invalidation
+  std::vector<std::string> tempLines(m_lines.begin() + start,
+                                     m_lines.begin() + end);
+
+  // now insert directly
+  m_lines.insert(m_lines.begin() + dest, tempLines.begin(), tempLines.end());
 
   // set to sane insert point
   m_currIdx = dest;
@@ -372,15 +375,27 @@ int Editor::inclusive_limit(int val) const {
 
 // static
 std::string Editor::trim(std::string const &line) {
-  // remove leading and trailing whitespace
+  return trim_right(trim_left(line));
+}
+
+// static
+std::string Editor::trim_left(std::string const &line) {
   size_t start = line.find_first_not_of(" \t");
   if (start == std::string::npos) {
     return "";
   }
 
-  size_t end = line.find_last_not_of(" \t");
+  return line.substr(start);
+}
 
-  return line.substr(start, end - start + 1);
+// static
+std::string Editor::trim_right(std::string const &line) {
+  size_t end = line.find_last_not_of(" \t");
+  if (end == std::string::npos) {
+    return "";
+  }
+
+  return line.substr(0, end + 1);
 }
 
 // static
