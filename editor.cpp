@@ -62,7 +62,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: delete, copy, move, find, replace
+  // TODO: copy, move, find, replace
 
   if (cinfo.command == ".abort") {
     m_inLoop = false;
@@ -70,6 +70,8 @@ void Editor::process_line() {
     fmt::print("< Lines not saved. >\n");
   } else if (cinfo.command == ".center") {
     align_text(cinfo, Alignment::CENTER);
+  } else if (cinfo.command == ".copy") {
+    copy_lines(cinfo);
   } else if (cinfo.command == ".del") {
     delete_lines(cinfo);
   } else if (cinfo.command == ".end") {
@@ -177,11 +179,43 @@ void Editor::move_cursor(CommandInfo const &cinfo) {
   fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
 }
 
-void Editor::delete_lines(CommandInfo const &cinfo) {
-  // std::ignore = cinfo;
-  // fmt::print("< NOTICE: NOT YET IMPLMENTED. >\n");
-  // return;
+void Editor::copy_lines(CommandInfo const &cinfo) {
 
+  auto [start, end] = get_inclusive_bounds(cinfo);
+  // copy method uses exclusive logic
+  end++;
+
+  if (!cinfo.target.has_value()) {
+    fmt::print("< Copy command require a destination line to copy to. See .h "
+               "for details. >\n");
+    return;
+  }
+
+  int dest = -1;
+  try {
+    dest = from_user_index(std::stoi(cinfo.target.value()));
+  } catch (std::exception const &e) {
+    fmt::print("< Invalid target line for copy. No lines changed. >\n");
+    return;
+  }
+
+  if (dest < 0 || dest > static_cast<int>(m_lines.size())) {
+    fmt::print("< Invalid target for line copy. No lines changed. >\n");
+    return;
+  }
+
+  m_lines.insert(m_lines.begin() + dest, m_lines.begin() + start,
+                 m_lines.begin() + end);
+
+  // set to sane insert point
+  m_currIdx = dest;
+
+  fmt::print("< Copied {} lines at position {}. >\n", end - start,
+             to_user_index(dest));
+  fmt::print("< Inserting lines at position {}. >\n", to_user_index(m_currIdx));
+}
+
+void Editor::delete_lines(CommandInfo const &cinfo) {
   if (!cinfo.startIdx.has_value()) {
     // for delete we only remove current line on empty range input
     if (m_currIdx >= static_cast<int>(m_lines.size())) {
@@ -288,7 +322,7 @@ Editor::CommandInfo Editor::parse_command_info(std::string const &line) {
   }
 
   // range is [start [end]]
-  auto const &[start, end] = split_on_first(range, " \t");
+  auto const &[start, end] = split_on_first(trim(range), " \t");
 
   if (!start.empty()) {
     info.startIdx = translate_anchors(start);
@@ -338,6 +372,10 @@ Editor::split_on_first(std::string const &line, std::string const &patt) {
   std::string first = line.substr(idx, end - idx);
 
   idx = line.find_first_not_of(patt, end);
+  if (idx == std::string::npos) {
+    return {first, ""};
+  }
+
   std::string rest = line.substr(idx);
 
   return {first, rest};
