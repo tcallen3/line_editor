@@ -39,6 +39,7 @@ private:
   void move_cursor(CommandInfo const &cinfo);
   void copy_lines(CommandInfo const &cinfo);
   void delete_lines(CommandInfo const &cinfo);
+  void find_string(CommandInfo const &cinfo);
   int translate_anchors(std::string const &anchor) const;
   std::pair<int, int> get_inclusive_bounds(CommandInfo const &cinfo) const;
   std::string format_line(std::string const &line, int colWidth,

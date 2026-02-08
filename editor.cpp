@@ -62,8 +62,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: copy, move, find, replace
-
+  // TODO: move, find, replace
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
@@ -78,6 +77,8 @@ void Editor::process_line() {
     fmt::print("< Editing finished. >\n");
     save_data();
     m_inLoop = false;
+  } else if (cinfo.command == ".find") {
+    find_string(cinfo);
   } else if (cinfo.command == ".h") {
     fmt::print("===HELP TEXT HERE===\n");
   } else if (cinfo.command == ".i") {
@@ -248,6 +249,31 @@ void Editor::delete_lines(CommandInfo const &cinfo) {
   }
 
   fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
+}
+
+void Editor::find_string(CommandInfo const &cinfo) {
+  int searchIdx =
+      cinfo.startIdx.has_value() ? cinfo.startIdx.value() : m_currIdx;
+
+  if (!cinfo.target.has_value()) {
+    fmt::print("< Find requires a search target. See .h for details. >\n");
+    return;
+  }
+
+  std::string const term = cinfo.target.value();
+
+  while (searchIdx < static_cast<int>(m_lines.size())) {
+    if (m_lines[searchIdx].find(term) != std::string::npos) {
+      m_currIdx = searchIdx;
+      fmt::print("< Found match at line {}. Moving there for edits. >\n",
+                 to_user_index(m_currIdx));
+      return;
+    }
+    searchIdx++;
+  }
+
+  fmt::print("< No matches found. Inserting at line {}. >\n",
+             to_user_index(m_currIdx));
 }
 
 int Editor::translate_anchors(std::string const &anchor) const {
