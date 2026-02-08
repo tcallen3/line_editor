@@ -24,6 +24,8 @@ void Editor::display_banner() const {
              "assistance.\n");
   fmt::print("================================================================="
              "===========\n");
+
+  fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
 }
 
 void Editor::read_line() {
@@ -62,13 +64,14 @@ void Editor::process_line() {
 
   // TODO: delete, copy, move, find, replace
 
-  // TODO: rename to shorter commands
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
     fmt::print("< Lines not saved. >\n");
   } else if (cinfo.command == ".center") {
     align_text(cinfo, Alignment::CENTER);
+  } else if (cinfo.command == ".del") {
+    delete_lines(cinfo);
   } else if (cinfo.command == ".end") {
     fmt::print("< Editing finished. >\n");
     save_data();
@@ -111,6 +114,7 @@ void Editor::save_data() {
 
 void Editor::print_lines(CommandInfo const &cinfo, bool useLineNumbers) const {
   auto [idx, end] = get_inclusive_bounds(cinfo);
+  int start = idx;
 
   if (idx > end) {
     fmt::print(
@@ -125,6 +129,9 @@ void Editor::print_lines(CommandInfo const &cinfo, bool useLineNumbers) const {
     fmt::print("{}\n", m_lines[idx]);
     idx++;
   }
+
+  fmt::print("< Listed {} lines, starting at line {}. >\n", end - start + 1,
+             to_user_index(start));
 }
 
 void Editor::align_text(CommandInfo const &cinfo, Alignment alignType) {
@@ -156,8 +163,8 @@ void Editor::align_text(CommandInfo const &cinfo, Alignment alignType) {
     idx++;
   }
 
-  fmt::print("< Formatted {} of {} lines. >\n", end - start + 1,
-             m_lines.size());
+  fmt::print("< Formatted {} lines, starting at line {}. >\n", end - start + 1,
+             start);
 }
 
 void Editor::move_cursor(CommandInfo const &cinfo) {
@@ -168,6 +175,33 @@ void Editor::move_cursor(CommandInfo const &cinfo) {
 
   m_currIdx = cinfo.startIdx.value();
   fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
+}
+
+void Editor::delete_lines(CommandInfo const &cinfo) {
+  std::ignore = cinfo;
+  fmt::print("< NOTICE: NOT YET IMPLMENTED. >\n");
+  return;
+
+  /*
+    if (!cinfo.startIdx.has_value()) {
+      // for delete we only remove current line on empty range input
+      m_lines.erase(m_lines.begin() + m_currIdx);
+      fmt::print("< Deleted 1 line, at position {}. >\n",
+                 to_user_index(m_currIdx));
+    } else {
+      auto [start, end] = get_inclusive_bounds(cinfo);
+      // erase method uses half-open interval so we adjust the end
+      end++;
+      m_lines.erase(m_lines.begin() + start, m_lines.begin() + end);
+      fmt::print("< Deleted {} lines, starting at line {}. >\n", end - start,
+                 to_user_index(start));
+
+      // move to safe offset
+      m_currIdx = start;
+    }
+
+    fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
+  */
 }
 
 int Editor::translate_anchors(std::string const &anchor) const {
