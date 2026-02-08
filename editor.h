@@ -37,6 +37,7 @@ private:
   void print_lines(CommandInfo const &cinfo, bool useLineNumbers) const;
   void align_text(CommandInfo const &cinfo, Alignment alignType);
   void move_cursor(CommandInfo const &cinfo);
+  void delete_lines(CommandInfo const &cinfo);
   int translate_anchors(std::string const &anchor) const;
   std::pair<int, int> get_inclusive_bounds(CommandInfo const &cinfo) const;
   std::string format_line(std::string const &line, int colWidth,
