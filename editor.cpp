@@ -256,6 +256,7 @@ void Editor::find_string(CommandInfo const &cinfo) {
 
   if (!cinfo.startIdx.has_value()) {
     searchIdx = m_currIdx;
+    end = m_currIdx;
   }
 
   if (!cinfo.target.has_value()) {
