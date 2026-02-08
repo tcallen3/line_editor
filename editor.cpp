@@ -62,7 +62,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: move, find, replace
+  // TODO: move, replace
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
@@ -252,8 +252,11 @@ void Editor::delete_lines(CommandInfo const &cinfo) {
 }
 
 void Editor::find_string(CommandInfo const &cinfo) {
-  int searchIdx =
-      cinfo.startIdx.has_value() ? cinfo.startIdx.value() : m_currIdx;
+  auto [searchIdx, end] = get_inclusive_bounds(cinfo);
+
+  if (!cinfo.startIdx.has_value()) {
+    searchIdx = m_currIdx;
+  }
 
   if (!cinfo.target.has_value()) {
     fmt::print("< Find requires a search target. See .h for details. >\n");
@@ -262,7 +265,7 @@ void Editor::find_string(CommandInfo const &cinfo) {
 
   std::string const term = cinfo.target.value();
 
-  while (searchIdx < static_cast<int>(m_lines.size())) {
+  while (searchIdx <= end) {
     if (m_lines[searchIdx].find(term) != std::string::npos) {
       m_currIdx = searchIdx;
       fmt::print("< Found match at line {}. Moving there for edits. >\n",
