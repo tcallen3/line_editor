@@ -5,7 +5,7 @@
 
 #include <fmt/format.h>
 
-// TODO: handle limits on line size and line count for safety
+// TODO: confirm ordering checks on ranges
 
 Editor::Editor(std::filesystem::path const &filePath) : m_editPath(filePath) {
   // TODO: check for file existence and read if present
@@ -31,16 +31,25 @@ void Editor::read_line() {
 }
 
 void Editor::process_line() {
+  // not a command, just insert in list
   if (!m_currLine.starts_with(".")) {
-    // not a command, just insert in list
+    if (m_lines.size() >= kMaxSize) {
+      fmt::print("< Max list size reached. Inserts not permitted. >\n");
+      return;
+    }
     m_lines.insert(m_lines.begin() + m_currIdx, m_currLine);
     m_currIdx++;
 
     return;
   }
 
+  // to handle special case of lines beginning with .., .", and .:
   if (has_escape_seq(m_currLine)) {
-    // to handle special case of lines beginning with .., .", and .:
+    if (m_lines.size() >= kMaxSize) {
+      fmt::print("< Max list size reached. Inserts not permitted. >\n");
+      return;
+    }
+
     m_lines.insert(m_lines.begin() + m_currIdx, m_currLine.substr(1));
     m_currIdx++;
 
@@ -59,7 +68,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: move, replace, add help text
+  // TODO: move, add help text
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
@@ -84,6 +93,8 @@ void Editor::process_line() {
     print_lines(cinfo, false);
   } else if (cinfo.command == ".left") {
     align_text(cinfo, Alignment::LEFT);
+  } else if (cinfo.command == ".move") {
+    move_lines(cinfo);
   } else if (cinfo.command == ".p") {
     print_lines(cinfo, true);
   } else if (cinfo.command == ".replace") {
@@ -180,6 +191,11 @@ void Editor::move_cursor(CommandInfo const &cinfo) {
 }
 
 void Editor::copy_lines(CommandInfo const &cinfo) {
+  if (m_lines.size() >= kMaxSize) {
+    fmt::print("< Max list size reached. Copying not permitted. >\n");
+    return;
+  }
+
   auto [start, end] = get_inclusive_bounds(cinfo);
   // copy method uses exclusive logic
   end++;
@@ -285,6 +301,11 @@ void Editor::find_string(CommandInfo const &cinfo) {
 }
 
 void Editor::replace(CommandInfo const &cinfo) {
+  if (m_lines.size() >= kMaxSize) {
+    fmt::print("< Max list size reached. Replacements not permitted. >\n");
+    return;
+  }
+
   auto [searchIdx, end] = get_inclusive_bounds(cinfo);
 
   if (!cinfo.startIdx.has_value()) {
@@ -319,6 +340,58 @@ void Editor::replace(CommandInfo const &cinfo) {
   }
 
   fmt::print("< Replaced text on {} lines. >\n", rCount);
+}
+
+void Editor::move_lines(CommandInfo const &cinfo) {
+  auto [blockStart, blockEnd] = get_inclusive_bounds(cinfo);
+
+  if (!cinfo.target.has_value()) {
+    fmt::print("< Move command require a destination line to move to. See .h "
+               "for details. >\n");
+    return;
+  }
+
+  int dest = -1;
+  try {
+    dest = from_user_index(std::stoi(cinfo.target.value()));
+  } catch (std::exception const &e) {
+    fmt::print("< Invalid target line for move. No lines changed. >\n");
+    return;
+  }
+
+  if (dest < 0 || dest > static_cast<int>(m_lines.size())) {
+    fmt::print("< Invalid target line for move. No lines changed. >\n");
+    return;
+  }
+
+  if (dest >= blockStart && dest <= blockEnd) {
+    // moving a block within itself amounts to a no-op in our model
+    fmt::print(
+        "< Moving a block within itself has no effect. No lines changed. >\n");
+    return;
+  }
+
+  // first copy to new vector to avoid iterator invalidation
+  std::vector<std::string> copiedLines(m_lines.begin() + blockStart,
+                                       m_lines.begin() + blockEnd + 1);
+
+  m_lines.insert(m_lines.begin() + dest, copiedLines.begin(),
+                 copiedLines.end());
+
+  // two delete cases: lines moved earlier and lines moved later
+  if (dest < blockStart) {
+    // we have to add block size to get refs to delete
+    int size = blockEnd - blockStart + 1;
+    m_lines.erase(m_lines.begin() + blockStart + size,
+                  m_lines.begin() + blockEnd + size + 1);
+
+  } else {
+    // lines to delete haven't changed index since we added after them
+    m_lines.erase(m_lines.begin() + blockStart, m_lines.begin() + blockEnd + 1);
+  }
+
+  fmt::print("< Moved {} lines. Inserting at line {}. >\n",
+             blockEnd - blockStart + 1, m_currIdx);
 }
 
 int Editor::translate_anchors(std::string const &anchor) const {

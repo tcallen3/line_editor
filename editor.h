@@ -41,6 +41,7 @@ private:
   void delete_lines(CommandInfo const &cinfo);
   void find_string(CommandInfo const &cinfo);
   void replace(CommandInfo const &cinfo);
+  void move_lines(CommandInfo const &cinfo);
   int translate_anchors(std::string const &anchor) const;
   std::pair<int, int> get_inclusive_bounds(CommandInfo const &cinfo) const;
   std::string format_line(std::string const &line, int colWidth,
@@ -57,6 +58,8 @@ private:
   parse_replace(std::string const &line);
   static int from_user_index(int userIndex);
   static int to_user_index(int index);
+
+  static constexpr size_t kMaxSize = 999;
 
   bool m_inLoop = true;
   int32_t m_currIdx = 0;
