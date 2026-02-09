@@ -86,6 +86,8 @@ void Editor::process_line() {
     align_text(cinfo, Alignment::LEFT);
   } else if (cinfo.command == ".p") {
     print_lines(cinfo, true);
+  } else if (cinfo.command == ".replace") {
+    replace(cinfo);
   } else if (cinfo.command == ".right") {
     align_text(cinfo, Alignment::RIGHT);
   } else if (cinfo.command == ".save") {
@@ -282,6 +284,43 @@ void Editor::find_string(CommandInfo const &cinfo) {
              to_user_index(m_currIdx));
 }
 
+void Editor::replace(CommandInfo const &cinfo) {
+  auto [searchIdx, end] = get_inclusive_bounds(cinfo);
+
+  if (!cinfo.startIdx.has_value()) {
+    searchIdx = m_currIdx;
+    end = m_currIdx;
+  }
+
+  if (!cinfo.target.has_value()) {
+    fmt::print("< Replace requires target text to search and replace. See .h "
+               "for details. >\n");
+    return;
+  }
+
+  std::string const replaceArgs = trim(cinfo.target.value());
+
+  auto [target, replacement] = parse_replace(replaceArgs);
+  if (target.empty()) {
+    fmt::print("< Replace requires target text to search and replace. See .h "
+               "for details. >\n");
+    return;
+  }
+
+  int rCount = 0;
+  size_t pos = 0;
+  while (searchIdx <= end) {
+    if ((pos = m_lines[searchIdx].find(target)) != std::string::npos) {
+      m_lines[searchIdx].replace(pos, target.size(), replacement);
+      rCount++;
+    }
+
+    searchIdx++;
+  }
+
+  fmt::print("< Replaced text on {} lines. >\n", rCount);
+}
+
 int Editor::translate_anchors(std::string const &anchor) const {
   if (anchor == "^") {
     return 0;
@@ -423,6 +462,37 @@ Editor::split_on_first(std::string const &line, std::string const &patt) {
   std::string rest = line.substr(idx);
 
   return {first, rest};
+}
+
+// static
+std::pair<std::string, std::string>
+Editor::parse_replace(std::string const &line) {
+  // Expected format: /<old>/<new>/
+
+  // deal with special case of empty <old> text (not allowed)
+  if (line.starts_with("//")) {
+    return {};
+  }
+
+  // input -> <?>/<old>/<new>/
+  auto [pre, argPair] = split_on_first(line, "/");
+  if (!pre.empty()) {
+    // text before initial '/' not supported
+    return {};
+  }
+
+  // argPair -> <old>/<new>/
+  auto [old, rest] = split_on_first(argPair, "/");
+  if (old.empty()) {
+    // unsupported
+    return {};
+  }
+
+  // old -> <old>, rest -> <new>/
+  // NOTE: empty <new> is supported as a way to delete target text
+  auto [replacement, _] = split_on_first(rest, "/");
+
+  return {old, replacement};
 }
 
 // static

@@ -40,6 +40,7 @@ private:
   void copy_lines(CommandInfo const &cinfo);
   void delete_lines(CommandInfo const &cinfo);
   void find_string(CommandInfo const &cinfo);
+  void replace(CommandInfo const &cinfo);
   int translate_anchors(std::string const &anchor) const;
   std::pair<int, int> get_inclusive_bounds(CommandInfo const &cinfo) const;
   std::string format_line(std::string const &line, int colWidth,
@@ -52,6 +53,8 @@ private:
   static bool has_escape_seq(std::string const &line);
   static std::pair<std::string, std::string>
   split_on_first(std::string const &line, std::string const &patt);
+  static std::pair<std::string, std::string>
+  parse_replace(std::string const &line);
   static int from_user_index(int userIndex);
   static int to_user_index(int index);
 
