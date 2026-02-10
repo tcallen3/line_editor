@@ -6,9 +6,16 @@
 #include <fmt/format.h>
 
 Editor::Editor(std::filesystem::path const &filePath) : m_editPath(filePath) {
-  // TODO: check for file existence and read if present
-  m_editFile.open(m_editPath,
-                  std::fstream::in | std::fstream::out | std::fstream::trunc);
+  if (std::filesystem::exists(filePath)) {
+    m_editFile.open(m_editPath, std::fstream::in | std::fstream::out);
+    while (getline(m_editFile, m_currLine)) {
+      m_lines.push_back(m_currLine);
+      m_currIdx++;
+    }
+  } else {
+    m_editFile.open(m_editPath,
+                    std::fstream::in | std::fstream::out | std::fstream::trunc);
+  }
 }
 
 void Editor::display_banner() const {
@@ -158,16 +165,22 @@ void Editor::process_line() {
 void Editor::display_prompt() const { fmt::print("> "); }
 
 void Editor::save_data() {
-  if (std::filesystem::exists(m_editPath)) {
-    std::filesystem::resize_file(m_editPath, 0);
-    m_editFile.seekp(0);
-  }
+  std::filesystem::path tempPath =
+      m_editPath.parent_path() /
+      std::filesystem::path{m_editPath.stem().string() + ".bak"};
+
+  std::fstream tempFile;
+  tempFile.open(tempPath,
+                std::fstream::in | std::fstream::out | std::fstream::trunc);
 
   for (auto const &line : m_lines) {
-    m_editFile << line << '\n';
+    tempFile << line << '\n';
   }
 
-  m_editFile.flush();
+  tempFile.flush();
+
+  m_editFile.close();
+  std::filesystem::rename(tempPath, m_editPath);
 
   fmt::print("< Lines successfully saved. >\n");
 }
