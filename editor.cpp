@@ -15,14 +15,64 @@ Editor::Editor(std::filesystem::path const &filePath) : m_editPath(filePath) {
 
 void Editor::display_banner() const {
   fmt::print("================================================================="
-             "===========\n");
-  fmt::print("Editor v0.5.0 by QuestionableDeer (2025)\n");
-  fmt::print("This is a line-oriented editor like UNIX ed. Type .h for usage "
+             "==============\n");
+  fmt::print("Editor v{}.{}.{} by QuestionableDeer (2025)\n", kMajorVersion,
+             kMinorVersion, kPatchVersion);
+  fmt::print("\n");
+  fmt::print("This is a line-oriented editor like UNIX ed. Type '.h' for usage "
              "assistance.\n");
+  fmt::print("Typing '.end' will exit and save changes, while '.abort' will "
+             "discard them.\n");
+  fmt::print("To save changes and continue editing, use '.save'\n");
   fmt::print("================================================================="
-             "===========\n");
+             "==============\n");
 
   fmt::print("< Inserting at line {}. >\n", to_user_index(m_currIdx));
+}
+
+void Editor::display_help() const {
+  fmt::print("-----------------------------------------------------------------"
+             "--------------\n");
+  fmt::print("Editor v{}.{}.{} Help\n", kMajorVersion, kMinorVersion,
+             kPatchVersion);
+  fmt::print("\n");
+  fmt::print(
+      "Any line not starting with \'.\' is inserted at the current line.\n");
+  fmt::print("Lines starting with '..', '.\"', or '.:' are added with the '.' "
+             "removed.\n");
+  fmt::print("\n");
+  fmt::print("In the usage below, arguments in '[]' are optional.\n");
+  fmt::print("Abbreviations: sl - start line, el - end line, dl - destination "
+             "line.\n");
+  fmt::print("Relative line references: ^ - first line, . - current line, $ - "
+             "last line\n");
+  fmt::print("-----------------------------------------------------------------"
+             "--------------\n");
+
+  fmt::print(".end                      Exits after saving changes.\n");
+  fmt::print(".abort                    Exits without saving.\n");
+  fmt::print(".h                        Displays this help.\n");
+  fmt::print(".l [sl [el]]              Lists lines in the range provided "
+             "(empty = list all).\n");
+  fmt::print(".p [sl [el]]              Like '.l' but prints line numbers.\n");
+  fmt::print(
+      ".del [sl [el]]            Deletes the given lines (empty = current).\n");
+  fmt::print(
+      ".copy [sl [el]]=dl        Copies selected lines to destination.\n");
+  fmt::print(
+      ".move [sl [el]]=dl        Moves selected lines to destination.\n");
+  fmt::print(".find [sl]=text           Searches for given text starting "
+             "at specified line.\n");
+  fmt::print(
+      ".replace [sl [el]]=/old/new/  Replaces old text with new in given "
+      "range.\n");
+  fmt::print(".left [sl [el]]           Align text in range to the left.\n");
+  fmt::print(".center [sl [el]]=cols    Center text in range to given column "
+             "width.\n");
+  fmt::print(".right [sl [el]]=cols     Align text in range to right for given "
+             "column width.\n");
+  fmt::print("-----------------------------------------------------------------"
+             "--------------\n");
 }
 
 void Editor::read_line() {
@@ -68,7 +118,7 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: move, add help text
+  // TODO: add help text
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
@@ -86,7 +136,7 @@ void Editor::process_line() {
   } else if (cinfo.command == ".find") {
     find_string(cinfo);
   } else if (cinfo.command == ".h") {
-    fmt::print("===HELP TEXT HERE===\n");
+    display_help();
   } else if (cinfo.command == ".i") {
     move_cursor(cinfo);
   } else if (cinfo.command == ".l") {
@@ -104,7 +154,7 @@ void Editor::process_line() {
   } else if (cinfo.command == ".save") {
     save_data();
   } else {
-    fmt::print("< Unrecognized command \"{}\". >\n", cinfo.command);
+    fmt::print("< Unrecognized command \'{}\'. >\n", cinfo.command);
   }
 }
 
@@ -158,7 +208,7 @@ void Editor::align_text(CommandInfo const &cinfo, Alignment alignType) {
 
   if (!cinfo.target.has_value()) {
     fmt::print("< Formatting commands require a number of columns to align to. "
-               "See .h for details. >\n");
+               "See '.h' for details. >\n");
     return;
   }
 
@@ -201,7 +251,7 @@ void Editor::copy_lines(CommandInfo const &cinfo) {
   end++;
 
   if (!cinfo.target.has_value()) {
-    fmt::print("< Copy command require a destination line to copy to. See .h "
+    fmt::print("< Copy command require a destination line to copy to. See '.h' "
                "for details. >\n");
     return;
   }
@@ -278,7 +328,7 @@ void Editor::find_string(CommandInfo const &cinfo) {
   }
 
   if (!cinfo.target.has_value()) {
-    fmt::print("< Find requires a search target. See .h for details. >\n");
+    fmt::print("< Find requires a search target. See '.h' for details. >\n");
     return;
   }
 
@@ -314,7 +364,7 @@ void Editor::replace(CommandInfo const &cinfo) {
   }
 
   if (!cinfo.target.has_value()) {
-    fmt::print("< Replace requires target text to search and replace. See .h "
+    fmt::print("< Replace requires target text to search and replace. See '.h' "
                "for details. >\n");
     return;
   }
@@ -323,7 +373,7 @@ void Editor::replace(CommandInfo const &cinfo) {
 
   auto [target, replacement] = parse_replace(replaceArgs);
   if (target.empty()) {
-    fmt::print("< Replace requires target text to search and replace. See .h "
+    fmt::print("< Replace requires target text to search and replace. See '.h' "
                "for details. >\n");
     return;
   }
@@ -346,7 +396,7 @@ void Editor::move_lines(CommandInfo const &cinfo) {
   auto [blockStart, blockEnd] = get_inclusive_bounds(cinfo);
 
   if (!cinfo.target.has_value()) {
-    fmt::print("< Move command require a destination line to move to. See .h "
+    fmt::print("< Move command require a destination line to move to. See '.h' "
                "for details. >\n");
     return;
   }

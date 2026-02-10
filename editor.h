@@ -33,6 +33,7 @@ private:
   };
 
   void display_prompt() const;
+  void display_help() const;
   void save_data();
   void print_lines(CommandInfo const &cinfo, bool useLineNumbers) const;
   void align_text(CommandInfo const &cinfo, Alignment alignType);
@@ -60,6 +61,9 @@ private:
   static int to_user_index(int index);
 
   static constexpr size_t kMaxSize = 999;
+  static constexpr size_t kMajorVersion = 0;
+  static constexpr size_t kMinorVersion = 5;
+  static constexpr size_t kPatchVersion = 0;
 
   bool m_inLoop = true;
   int32_t m_currIdx = 0;
