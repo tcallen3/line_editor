@@ -5,8 +5,6 @@
 
 #include <fmt/format.h>
 
-// TODO: confirm ordering checks on ranges
-
 Editor::Editor(std::filesystem::path const &filePath) : m_editPath(filePath) {
   // TODO: check for file existence and read if present
   m_editFile.open(m_editPath,
@@ -118,7 +116,6 @@ void Editor::process_line() {
     return;
   }
 
-  // TODO: add help text
   if (cinfo.command == ".abort") {
     m_inLoop = false;
     fmt::print("< Editing aborted. >\n");
@@ -247,6 +244,11 @@ void Editor::copy_lines(CommandInfo const &cinfo) {
   }
 
   auto [start, end] = get_inclusive_bounds(cinfo);
+  if (start > end) {
+    fmt::print("< Warning: starting index larger than ending index, no text "
+               "will be copied. >\n");
+    return;
+  }
   // copy method uses exclusive logic
   end++;
 
@@ -296,13 +298,13 @@ void Editor::delete_lines(CommandInfo const &cinfo) {
                to_user_index(m_currIdx));
   } else {
     auto [start, end] = get_inclusive_bounds(cinfo);
-
     if (start >= static_cast<int>(m_lines.size())) {
       return;
     }
 
     if (start > end) {
-      fmt::print("< Invalid range. No lines deleted. >\n");
+      fmt::print("< Warning: starting index larger than ending index. No lines "
+                 "deleted. >\n");
       return;
     }
 
@@ -357,6 +359,11 @@ void Editor::replace(CommandInfo const &cinfo) {
   }
 
   auto [searchIdx, end] = get_inclusive_bounds(cinfo);
+  if (searchIdx > end) {
+    fmt::print("< Warning: starting index larger than ending index. No text "
+               "replaced. >\n");
+    return;
+  }
 
   if (!cinfo.startIdx.has_value()) {
     searchIdx = m_currIdx;
@@ -394,6 +401,11 @@ void Editor::replace(CommandInfo const &cinfo) {
 
 void Editor::move_lines(CommandInfo const &cinfo) {
   auto [blockStart, blockEnd] = get_inclusive_bounds(cinfo);
+  if (blockStart > blockEnd) {
+    fmt::print("< Warning: starting index larger than ending index. No lines "
+               "moved. >\n");
+    return;
+  }
 
   if (!cinfo.target.has_value()) {
     fmt::print("< Move command require a destination line to move to. See '.h' "
