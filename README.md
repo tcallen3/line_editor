@@ -14,7 +14,9 @@ Lines starting with '..', '."', or '.:' are added with the '.' removed.
 In the usage below, arguments in '[]' are optional.
 Abbreviations: sl - start line, el - end line, dl - destination line.
 Relative line references: ^ - first line, . - current line, $ - last line
+
 -------------------------------------------------------------------------------
+
 .end                      Exits after saving changes.
 .abort                    Exits without saving.
 .h                        Displays this help.
@@ -28,4 +30,5 @@ Relative line references: ^ - first line, . - current line, $ - last line
 .left [sl [el]]           Align text in range to the left.
 .center [sl [el]]=cols    Center text in range to given column width.
 .right [sl [el]]=cols     Align text in range to right for given column width.
+
 -------------------------------------------------------------------------------
